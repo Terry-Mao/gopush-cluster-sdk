@@ -1,5 +1,5 @@
 ## Terry-Mao/gopush-cluster-sdk
-`Terry-Mao/gopush-cluster-sdk` is an java sdk for gopush-cluster
+`Terry-Mao/gopush-cluster-sdk` is an java sdk for [gopush-cluster](https://github.com/Terry-Mao/gopush-cluster)
 
 ## Requeriments
 Java and maven is required
