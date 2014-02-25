@@ -60,6 +60,7 @@ public class GoPushCli {
 		try {
 			node = getNodeHostAndPort(HttpUtils.getURL("http", host, port,
 					"/server/get", "key", key, "expire", expire, "proto", 2));
+			// 初始化socket
 			initSocket(node);
 			// 协议已经握手，打开
 			listener.onOpen();
@@ -81,7 +82,7 @@ public class GoPushCli {
 		if (isSync) {
 			try {
 				crawl();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				listener.onError(e, e.getMessage());
 			} finally {
 				destory();
@@ -92,7 +93,7 @@ public class GoPushCli {
 				public void run() {
 					try {
 						crawl();
-					} catch (IOException e) {
+					} catch (Exception e) {
 						listener.onError(e, e.getMessage());
 					} finally {
 						destory();
@@ -106,17 +107,16 @@ public class GoPushCli {
 		try {
 			this.socket = new Socket(node[0], Integer.parseInt(node[1]));
 			this.socket.setKeepAlive(true);
+			// 两倍超时时间
 			this.socket.setSoTimeout(expire * 2 * 1000);
 			this.reader = new BufferedReader(new InputStreamReader(
 					this.socket.getInputStream()));
 			this.writer = new PrintWriter(new OutputStreamWriter(
 					this.socket.getOutputStream()));
+			// 发送请求协议头
+			sendHeader();
 		} catch (Exception e) {
-			throw new Exception("创建套接字发生异常", e);
-		}
-
-		if (!sendHeader()) {
-			throw new Exception("握手失败");
+			throw new Exception("初始化套接字错误", e);
 		}
 	}
 
@@ -144,7 +144,8 @@ public class GoPushCli {
 		try {
 			JSONObject data = new JSONObject(HttpUtils.get(domain));
 			// 判断协议
-			if (data.getInt(Constant.KS_NET_JSON_KEY_RET) == Constant.KS_NET_STATE_OK) {
+			int ret = data.getInt(Constant.KS_NET_JSON_KEY_RET);
+			if (ret == Constant.KS_NET_STATE_OK) {
 				JSONObject jot = data
 						.getJSONObject(Constant.KS_NET_JSON_KEY_DATA);
 				String server = jot.getString(Constant.KS_NET_JSON_KEY_SERVER);
@@ -153,14 +154,16 @@ public class GoPushCli {
 				isGetNode = true;
 				return result;
 			} else {
-				return null;
+				throw new Exception("获取come连接节点时返回码错误: " + ret);
 			}
-		} catch (Exception e) {
-			throw new Exception("获取节点信息时发生异常", e);
+		} catch (IOException e) {
+			throw new Exception("获取comet连接节点信息时网络失败", e);
+		} catch (JSONException e) {
+			throw new Exception("获取comet连接节点信息时json解析失败", e);
 		}
 	}
 
-	private boolean sendHeader() throws IOException {
+	private void sendHeader() throws Exception {
 		String expireStr = expire.toString();
 		String protocol = "*3\r\n$3\r\nsub\r\n$" + key.length() + "\r\n" + key
 				+ "\r\n$" + expireStr.length() + "\r\n" + expireStr + "\r\n";
@@ -171,12 +174,11 @@ public class GoPushCli {
 		if (response.startsWith("+")) {
 			// 初始心跳
 			isHandshake = true;
-			return true;
 		} else if (response.startsWith("-")) {
 			// 协议错误
-			return false;
+			throw new Exception("comet节点握手协议错误: " + response);
 		} else {
-			throw new IllegalArgumentException("无法识别的响应内容:" + response);
+			throw new IllegalArgumentException("无法识别comet返回协议: " + response);
 		}
 	}
 
@@ -193,7 +195,7 @@ public class GoPushCli {
 		return reader.readLine();
 	}
 
-	private void crawl() throws IOException {
+	private void crawl() throws Exception {
 		String line = null;
 		try {
 			while ((line = receive()) != null) {
@@ -216,73 +218,77 @@ public class GoPushCli {
 
 					listener.onOnlineMessage(msg);
 				} else if (line.startsWith("-")) {
-					// 存在异常
-					return;
+					throw new Exception("comet节点订阅协议错误: " + line);
 				}
 			}
 		} catch (IOException e) {
-			throw new IOException("接受数据时发生异常", e);
+			throw new Exception("获取comet节点订阅数据网络数据失败", e);
 		} catch (JSONException e) {
-			throw new IOException("解析JSON时发生异常", e);
+			throw new Exception("解析comet节点订阅返回JSON时失败", e);
 		}
 	}
 
-	private ArrayList<PushMessage> getOfflineMessage() throws IOException,
-			JSONException {
-		// 获取离线消息
-		String offlineMessage = HttpUtils.get(HttpUtils.getURL("http", host,
-				port, "/msg/get", "key", key, "mid", mid, "pmid", pmid));
-		JSONObject jot = new JSONObject(offlineMessage);
-		// 协议错误
-		if (jot.getInt(Constant.KS_NET_JSON_KEY_RET) != Constant.KS_NET_STATE_OK) {
-			return null;
-		}
-
-		// 没有data数据
-		if (jot.isNull(Constant.KS_NET_JSON_KEY_DATA)) {
-			return null;
-		}
-
-		ArrayList<PushMessage> res = new ArrayList<PushMessage>();
-		int pl = 0;
-		// 获取私信列表
-		JSONObject data = jot.getJSONObject(Constant.KS_NET_JSON_KEY_DATA);
-		// 没有msgs数据
-		if (!data.isNull(Constant.KS_NET_JSON_KEY_MESSAGES)) {
-			JSONArray arr = data
-					.getJSONArray(Constant.KS_NET_JSON_KEY_MESSAGES);
-			for (int i = 0; i < arr.length(); i++) {
-				JSONObject message = new JSONObject(arr.getString(i));
-				res.add(new PushMessage(message
-						.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
-						message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
-						0));
+	private ArrayList<PushMessage> getOfflineMessage() throws Exception {
+		try {
+			// 获取离线消息
+			String offlineMessage = HttpUtils.get(HttpUtils.getURL("http",
+					host, port, "/msg/get", "key", key, "mid", mid, "pmid",
+					pmid));
+			JSONObject jot = new JSONObject(offlineMessage);
+			// 协议错误
+			int ret = jot.getInt(Constant.KS_NET_JSON_KEY_RET);
+			if (ret != Constant.KS_NET_STATE_OK) {
+				throw new Exception("获取离线消息协议返回码错误: " + ret);
 			}
 
-			// 更新最大私信ID
-			pl = res.size();
-			if (pl > 0)
-				mmid = res.get(pl - 1).getMid();
-		}
-		// 获取公信列表
-		// 没有msgs数据
-		if (!data.isNull(Constant.KS_NET_JSON_KEY_PMESSAGES)) {
-			JSONArray arr = data
-					.getJSONArray(Constant.KS_NET_JSON_KEY_PMESSAGES);
-			for (int i = 0; i < arr.length(); i++) {
-				JSONObject message = new JSONObject(arr.getString(i));
-				res.add(new PushMessage(message
-						.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
-						message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
-						1));
+			// 没有data数据
+			if (jot.isNull(Constant.KS_NET_JSON_KEY_DATA)) {
+				return null;
 			}
 
-			// 更新最大公信ID
-			if (res.size() > pl)
-				mpmid = res.get(res.size() - 1).getMid();
-		}
+			ArrayList<PushMessage> res = new ArrayList<PushMessage>();
+			int pl = 0;
+			// 获取私信列表
+			JSONObject data = jot.getJSONObject(Constant.KS_NET_JSON_KEY_DATA);
+			// 没有msgs数据
+			if (!data.isNull(Constant.KS_NET_JSON_KEY_MESSAGES)) {
+				JSONArray arr = data
+						.getJSONArray(Constant.KS_NET_JSON_KEY_MESSAGES);
+				for (int i = 0; i < arr.length(); i++) {
+					JSONObject message = new JSONObject(arr.getString(i));
+					res.add(new PushMessage(
+							message.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
+							message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
+							0));
+				}
 
-		return res;
+				// 更新最大私信ID
+				pl = res.size();
+				if (pl > 0)
+					mmid = res.get(pl - 1).getMid();
+			}
+			// 获取公信列表
+			// 没有msgs数据
+			if (!data.isNull(Constant.KS_NET_JSON_KEY_PMESSAGES)) {
+				JSONArray arr = data
+						.getJSONArray(Constant.KS_NET_JSON_KEY_PMESSAGES);
+				for (int i = 0; i < arr.length(); i++) {
+					JSONObject message = new JSONObject(arr.getString(i));
+					res.add(new PushMessage(
+							message.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
+							message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
+							1));
+				}
+
+				// 更新最大公信ID
+				if (res.size() > pl)
+					mpmid = res.get(res.size() - 1).getMid();
+			}
+
+			return res;
+		} catch (JSONException e) {
+			throw new Exception("解析离线消息返回JSON时失败", e);
+		}
 	}
 
 	public boolean isGetNode() {
@@ -298,7 +304,7 @@ public class GoPushCli {
 		public void run() {
 			while (!Thread.currentThread().isInterrupted()) {
 				// 发送心跳
-				System.out.println("heartBeat run!");
+				// System.out.println("heartBeat run!");
 				send("h");
 				try {
 					TimeUnit.SECONDS.sleep(expire);
