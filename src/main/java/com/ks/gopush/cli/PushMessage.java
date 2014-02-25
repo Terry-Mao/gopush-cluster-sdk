@@ -1,8 +1,8 @@
 package com.ks.gopush.cli;
 
-public class Message {
+public class PushMessage {
 	
-	public Message(String msg, long mid, long gid) {
+	public PushMessage(String msg, long mid, long gid) {
 		this.msg = msg;
 		this.mid = mid;
 		this.gid = gid;

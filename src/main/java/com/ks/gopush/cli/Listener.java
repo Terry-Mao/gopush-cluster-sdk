@@ -7,9 +7,9 @@ public interface Listener {
 
 	void onClose();
 
-	void onOnlineMessage(Message message);
+	void onOnlineMessage(PushMessage message);
 
-	void onOfflineMessage(ArrayList<Message> messages);
+	void onOfflineMessage(ArrayList<PushMessage> messages);
 
 	void onError(Throwable e, String message);
 }

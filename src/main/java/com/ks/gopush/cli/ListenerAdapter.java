@@ -9,12 +9,12 @@ public abstract class ListenerAdapter implements Listener {
 	}
 
 	@Override
-	public void onOfflineMessage(ArrayList<Message> messages) {
+	public void onOfflineMessage(ArrayList<PushMessage> messages) {
 
 	}
 
 	@Override
-	public void onOnlineMessage(Message message) {
+	public void onOnlineMessage(PushMessage message) {
 
 	}
 	

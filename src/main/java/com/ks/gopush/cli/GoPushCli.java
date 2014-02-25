@@ -36,7 +36,7 @@ public class GoPushCli {
 			initSocket(node);
 			// 协议已经握手，打开
 			listener.onOpen();
-			ArrayList<Message> messages = getOfflineMessage();
+			ArrayList<PushMessage> messages = getOfflineMessage();
 			// 如果有离线消息
 			if (messages != null) {
 				listener.onOfflineMessage(messages);
@@ -174,7 +174,7 @@ public class GoPushCli {
 				} else if (line.startsWith("$")) {
 					line = receive();
 					JSONObject jot = new JSONObject(line);
-					Message msg = new Message(
+					PushMessage msg = new PushMessage(
 							jot.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
 							jot.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
 							jot.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_GID));
@@ -191,7 +191,7 @@ public class GoPushCli {
 		}
 	}
 
-	private ArrayList<Message> getOfflineMessage() throws IOException,
+	private ArrayList<PushMessage> getOfflineMessage() throws IOException,
 			JSONException {
 		// 获取离线消息
 		String offlineMessage = HttpUtils.get(HttpUtils.getURL("http", host,
@@ -207,7 +207,7 @@ public class GoPushCli {
 			return null;
 		}
 
-		ArrayList<Message> res = new ArrayList<Message>();
+		ArrayList<PushMessage> res = new ArrayList<PushMessage>();
 		// 获取私信列表
 		JSONObject data = jot.getJSONObject(Constant.KS_NET_JSON_KEY_DATA);
 		// 没有msgs数据
@@ -216,7 +216,7 @@ public class GoPushCli {
 					.getJSONArray(Constant.KS_NET_JSON_KEY_MESSAGES);
 			for (int i = 0; i < arr.length(); i++) {
 				JSONObject message = new JSONObject(arr.getString(0));
-				res.add(new Message(message
+				res.add(new PushMessage(message
 						.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
 						message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
 						0));
@@ -229,7 +229,7 @@ public class GoPushCli {
 					.getJSONArray(Constant.KS_NET_JSON_KEY_PMESSAGES);
 			for (int i = 0; i < arr.length(); i++) {
 				JSONObject message = new JSONObject(arr.getString(0));
-				res.add(new Message(message
+				res.add(new PushMessage(message
 						.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
 						message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
 						1));

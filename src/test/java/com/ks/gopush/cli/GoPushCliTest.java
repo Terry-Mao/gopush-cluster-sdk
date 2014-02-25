@@ -10,7 +10,7 @@ import org.junit.Test;
 public class GoPushCliTest {
 	@Before
 	public void init() {
-		local.set(new GoPushCli("42.96.200.187", 8090, "Terry-Mao", 30, 0, 0,
+		local.set(new GoPushCli("42.96.200.187", 8090, "jtxrvju5d7kssf5xxpx8rragzeqc", 30, 0, 0,
 				new Listener() {
 					@Override
 					public void onOpen() {
@@ -18,15 +18,15 @@ public class GoPushCliTest {
 					}
 
 					@Override
-					public void onOnlineMessage(Message message) {
+					public void onOnlineMessage(PushMessage message) {
 						System.err.println("online message: "
 								+ message.getMsg());
 					}
 
 					@Override
-					public void onOfflineMessage(ArrayList<Message> messages) {
+					public void onOfflineMessage(ArrayList<PushMessage> messages) {
 						if (messages != null)
-							for (Message message : messages) {
+							for (PushMessage message : messages) {
 								System.err.println("offline message: "
 										+ message.getMsg());
 							}
