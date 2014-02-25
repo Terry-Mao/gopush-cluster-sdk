@@ -17,8 +17,26 @@ import com.ks.gopush.cli.utils.Constant;
 import com.ks.gopush.cli.utils.HttpUtils;
 
 public class GoPushCli {
+	/**
+	 * 初始化GopushCli
+	 * 
+	 * @param host
+	 *            web模块的host
+	 * @param port
+	 *            web模块的端口
+	 * @param key
+	 *            订阅的key
+	 * @param expire
+	 *            设置过期和心跳时间（单位：秒）
+	 * @param mid
+	 *            设置上次接受私信推送以来最大的消息ID
+	 * @param pmid
+	 *            设置上次接受公信推送以来最大的消息ID
+	 * @param listener
+	 *            设置监听器
+	 */
 	public GoPushCli(String host, Integer port, String key, Integer expire,
-			Integer mid, Integer pmid, Listener listener) {
+			long mid, long pmid, Listener listener) {
 		this.host = host;
 		this.port = port;
 		this.key = key;
@@ -26,8 +44,17 @@ public class GoPushCli {
 		this.mid = mid;
 		this.pmid = pmid;
 		this.listener = listener;
+		// 默认最大ID用传入值
+		this.mmid = mid;
+		this.mpmid = pmid;
 	}
 
+	/**
+	 * 开始订阅
+	 * 
+	 * @param isSync
+	 *            true: 同步订阅，会阻塞在start函数。 false: 异步订阅，订阅成功后会返回。
+	 */
 	public void start(boolean isSync) {
 		String[] node = null;
 		try {
@@ -122,6 +149,7 @@ public class GoPushCli {
 						.getJSONObject(Constant.KS_NET_JSON_KEY_DATA);
 				String server = jot.getString(Constant.KS_NET_JSON_KEY_SERVER);
 				String[] result = server.split(":");
+				// 已经获取节点
 				isGetNode = true;
 				return result;
 			} else {
@@ -178,6 +206,14 @@ public class GoPushCli {
 							jot.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
 							jot.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
 							jot.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_GID));
+					// 过滤重复数据，（获取离线消息之后的头几条在线消息可能会重复）
+					if ((msg.getGid() == Constant.KS_NET_MESSAGE_PRIVATE_GID && msg
+							.getMid() <= mmid)
+							|| (msg.getGid() != Constant.KS_NET_MESSAGE_PRIVATE_GID && msg
+									.getMid() <= mpmid)) {
+						continue;
+					}
+
 					listener.onOnlineMessage(msg);
 				} else if (line.startsWith("-")) {
 					// 存在异常
@@ -208,6 +244,7 @@ public class GoPushCli {
 		}
 
 		ArrayList<PushMessage> res = new ArrayList<PushMessage>();
+		int pl = 0;
 		// 获取私信列表
 		JSONObject data = jot.getJSONObject(Constant.KS_NET_JSON_KEY_DATA);
 		// 没有msgs数据
@@ -215,12 +252,17 @@ public class GoPushCli {
 			JSONArray arr = data
 					.getJSONArray(Constant.KS_NET_JSON_KEY_MESSAGES);
 			for (int i = 0; i < arr.length(); i++) {
-				JSONObject message = new JSONObject(arr.getString(0));
+				JSONObject message = new JSONObject(arr.getString(i));
 				res.add(new PushMessage(message
 						.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
 						message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
 						0));
 			}
+
+			// 更新最大私信ID
+			pl = res.size();
+			if (pl > 0)
+				mmid = res.get(pl - 1).getMid();
 		}
 		// 获取公信列表
 		// 没有msgs数据
@@ -228,12 +270,16 @@ public class GoPushCli {
 			JSONArray arr = data
 					.getJSONArray(Constant.KS_NET_JSON_KEY_PMESSAGES);
 			for (int i = 0; i < arr.length(); i++) {
-				JSONObject message = new JSONObject(arr.getString(0));
+				JSONObject message = new JSONObject(arr.getString(i));
 				res.add(new PushMessage(message
 						.getString(Constant.KS_NET_JSON_KEY_MESSAGE_MSG),
 						message.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
 						1));
 			}
+
+			// 更新最大公信ID
+			if (res.size() > pl)
+				mpmid = res.get(res.size() - 1).getMid();
 		}
 
 		return res;
@@ -265,16 +311,18 @@ public class GoPushCli {
 	}
 
 	// 对象属性
-	private String key;
-	private Integer expire;
-	private Integer mid;
-	private Integer pmid;
+	private String key; // subscriber key
+	private Integer expire; // expire second
+	private long mid; // private mid
+	private long pmid; // public mid
+	private long mpmid; // max public mid
+	private long mmid; // max private mid
+	private String host; // web module host
+	private Integer port; // web module port
 	private Listener listener;
 	private Socket socket;
 	private BufferedReader reader;
 	private PrintWriter writer;
-	private String host;
-	private Integer port;
 
 	private Thread heartbeatTask;
 

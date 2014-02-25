@@ -11,18 +11,23 @@ public class PushMessage {
 	public String getMsg() {
 		return msg;
 	}
+	
 	public void setMsg(String msg) {
 		this.msg = msg;
 	}
+	
 	public long getMid() {
 		return mid;
 	}
+	
 	public void setMid(long mid) {
 		this.mid = mid;
 	}
+	
 	public long getGid() {
 		return gid;
 	}
+	
 	public void setGid(long gid) {
 		this.gid = gid;
 	}

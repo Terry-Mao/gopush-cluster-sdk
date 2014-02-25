@@ -28,4 +28,6 @@ public class Constant {
 
 	public static final int KS_NET_MESSAGE_OBTAIN_DATA_OK = 2;
 	public static final int KS_NET_MESSAGE_DISCONNECT = 1;
+	
+	public static final int KS_NET_MESSAGE_PRIVATE_GID = 0;
 }

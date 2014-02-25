@@ -10,7 +10,7 @@ import org.junit.Test;
 public class GoPushCliTest {
 	@Before
 	public void init() {
-		local.set(new GoPushCli("42.96.200.187", 8090, "jtxrvju5d7kssf5xxpx8rragzeqc", 30, 0, 0,
+		local.set(new GoPushCli("42.96.200.187", 8090, "jtxrvju5d7kssf5xxpx8rragzeqc", 30, 0L, 0L,
 				new Listener() {
 					@Override
 					public void onOpen() {
@@ -21,6 +21,8 @@ public class GoPushCliTest {
 					public void onOnlineMessage(PushMessage message) {
 						System.err.println("online message: "
 								+ message.getMsg());
+						System.err.println("online message id: "
+								+ message.getMid());
 					}
 
 					@Override
@@ -29,6 +31,8 @@ public class GoPushCliTest {
 							for (PushMessage message : messages) {
 								System.err.println("offline message: "
 										+ message.getMsg());
+								System.err.println("offline message id: "
+										+ message.getMid());
 							}
 					}
 
@@ -63,11 +67,15 @@ public class GoPushCliTest {
 			}
 		}.start();
 		try {
-			TimeUnit.SECONDS.sleep(10000000);
+			TimeUnit.SECONDS.sleep(2);
 		} catch (InterruptedException e) {
 		}
 		Assert.assertTrue("获取节点失败", cli.isGetNode());
 		Assert.assertTrue("握手失败", cli.isHandshake());
+		try {
+			TimeUnit.SECONDS.sleep(2000000);
+		} catch (InterruptedException e) {
+		}
 		cli.destory();
 	}
 
