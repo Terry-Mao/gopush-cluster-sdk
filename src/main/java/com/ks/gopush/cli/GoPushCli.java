@@ -209,11 +209,17 @@ public class GoPushCli {
 							jot.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_MID),
 							jot.getLong(Constant.KS_NET_JSON_KEY_MESSAGE_GID));
 					// 过滤重复数据，（获取离线消息之后的头几条在线消息可能会重复）
-					if ((msg.getGid() == Constant.KS_NET_MESSAGE_PRIVATE_GID && msg
-							.getMid() <= mmid)
-							|| (msg.getGid() != Constant.KS_NET_MESSAGE_PRIVATE_GID && msg
-									.getMid() <= mpmid)) {
-						continue;
+					// 注意之后不需要更新mmid和pmid了，之后服务端是绝对的顺序以及无重复返回消息，只有离线读完读在线的过程可能会重复。为了保险还是加上
+					if (msg.getGid() == Constant.KS_NET_MESSAGE_PRIVATE_GID) {
+						if (msg.getMid() <= mmid)
+							continue;
+						else
+							mmid = msg.getMid();
+					} else {
+						if (msg.getMid() <= pmid)
+							continue;
+						else
+							pmid = msg.getMid();
 					}
 
 					listener.onOnlineMessage(msg);
