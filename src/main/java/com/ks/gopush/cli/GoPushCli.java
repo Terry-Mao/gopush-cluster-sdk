@@ -216,7 +216,7 @@ public class GoPushCli {
 						else
 							mmid = msg.getMid();
 					} else {
-						if (msg.getMid() <= pmid)
+						if (msg.getMid() <= mpmid)
 							continue;
 						else
 							mpmid = msg.getMid();
