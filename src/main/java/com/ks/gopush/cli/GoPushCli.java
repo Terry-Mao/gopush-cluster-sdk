@@ -219,7 +219,7 @@ public class GoPushCli {
 						if (msg.getMid() <= pmid)
 							continue;
 						else
-							pmid = msg.getMid();
+							mpmid = msg.getMid();
 					}
 
 					listener.onOnlineMessage(msg);

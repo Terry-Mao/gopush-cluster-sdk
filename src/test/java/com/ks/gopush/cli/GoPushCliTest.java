@@ -67,7 +67,7 @@ public class GoPushCliTest {
 			}
 		}.start();
 		try {
-			TimeUnit.SECONDS.sleep(2);
+			TimeUnit.SECONDS.sleep(10);
 		} catch (InterruptedException e) {
 		}
 		Assert.assertTrue("获取节点失败", cli.isGetNode());
