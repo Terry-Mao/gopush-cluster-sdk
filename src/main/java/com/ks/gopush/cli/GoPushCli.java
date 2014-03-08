@@ -35,18 +35,15 @@ public class GoPushCli {
 	 * @param listener
 	 *            设置监听器
 	 */
-	public GoPushCli(String host, Integer port, String key, Integer expire,
+	public GoPushCli(String host, Integer port, String key, Integer heartbeat,
 			long mid, long pmid, Listener listener) {
 		this.host = host;
 		this.port = port;
 		this.key = key;
-		this.expire = expire;
+		this.heartbeat = heartbeat;
 		this.mid = mid;
 		this.pmid = pmid;
 		this.listener = listener;
-		// 默认最大ID用传入值
-		this.mmid = mid;
-		this.mpmid = pmid;
 	}
 
 	/**
@@ -59,7 +56,7 @@ public class GoPushCli {
 		String[] node = null;
 		try {
 			node = getNodeHostAndPort(HttpUtils.getURL("http", host, port,
-					"/server/get", "key", key, "expire", expire, "proto", 2));
+					"/server/get", "key", key, "expire", heartbeat, "proto", 2));
 			// 初始化socket
 			initSocket(node);
 			// 协议已经握手，打开
@@ -108,7 +105,7 @@ public class GoPushCli {
 			this.socket = new Socket(node[0], Integer.parseInt(node[1]));
 			this.socket.setKeepAlive(true);
 			// 两倍超时时间
-			this.socket.setSoTimeout(expire * 2 * 1000);
+			this.socket.setSoTimeout((heartbeat + 15) * 1000);
 			this.reader = new BufferedReader(new InputStreamReader(
 					this.socket.getInputStream()));
 			this.writer = new PrintWriter(new OutputStreamWriter(
@@ -164,9 +161,9 @@ public class GoPushCli {
 	}
 
 	private void sendHeader() throws Exception {
-		String expireStr = expire.toString();
+		String heartbeatStr = heartbeat.toString();
 		String protocol = "*3\r\n$3\r\nsub\r\n$" + key.length() + "\r\n" + key
-				+ "\r\n$" + expireStr.length() + "\r\n" + expireStr + "\r\n";
+				+ "\r\n$" + heartbeatStr.length() + "\r\n" + heartbeatStr + "\r\n";
 
 		// 发送请求协议
 		send(protocol);
@@ -211,15 +208,15 @@ public class GoPushCli {
 					// 过滤重复数据，（获取离线消息之后的头几条在线消息可能会重复）
 					// 注意之后不需要更新mmid和pmid了，之后服务端是绝对的顺序以及无重复返回消息，只有离线读完读在线的过程可能会重复。为了保险还是加上
 					if (msg.getGid() == Constant.KS_NET_MESSAGE_PRIVATE_GID) {
-						if (msg.getMid() <= mmid)
+						if (msg.getMid() <= this.mid)
 							continue;
 						else
-							mmid = msg.getMid();
+							mid = msg.getMid();
 					} else {
-						if (msg.getMid() <= mpmid)
+						if (msg.getMid() <= pmid)
 							continue;
 						else
-							mpmid = msg.getMid();
+							pmid = msg.getMid();
 					}
 
 					listener.onOnlineMessage(msg);
@@ -271,7 +268,7 @@ public class GoPushCli {
 				// 更新最大私信ID
 				pl = res.size();
 				if (pl > 0)
-					mmid = res.get(pl - 1).getMid();
+					mid = res.get(pl - 1).getMid();
 			}
 			// 获取公信列表
 			// 没有msgs数据
@@ -288,7 +285,7 @@ public class GoPushCli {
 
 				// 更新最大公信ID
 				if (res.size() > pl)
-					mpmid = res.get(res.size() - 1).getMid();
+					pmid = res.get(res.size() - 1).getMid();
 			}
 
 			return res;
@@ -313,7 +310,7 @@ public class GoPushCli {
 				// System.out.println("heartBeat run!");
 				send("h");
 				try {
-					TimeUnit.SECONDS.sleep(expire);
+					TimeUnit.SECONDS.sleep(heartbeat);
 				} catch (InterruptedException e) {
 					System.err.println("Timer is stop");
 					break;
@@ -324,11 +321,9 @@ public class GoPushCli {
 
 	// 对象属性
 	private String key; // subscriber key
-	private Integer expire; // expire second
+	private Integer heartbeat; // heartbeat second
 	private long mid; // private mid
 	private long pmid; // public mid
-	private long mpmid; // max public mid
-	private long mmid; // max private mid
 	private String host; // web module host
 	private Integer port; // web module port
 	private Listener listener;
