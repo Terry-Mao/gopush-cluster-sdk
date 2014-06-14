@@ -1,6 +1,6 @@
 package com.ks.gopush.cli;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public abstract class ListenerAdapter implements Listener {
 	@Override
@@ -9,7 +9,7 @@ public abstract class ListenerAdapter implements Listener {
 	}
 
 	@Override
-	public void onOfflineMessage(ArrayList<PushMessage> messages) {
+	public void onOfflineMessage(List<PushMessage> messages) {
 
 	}
 
@@ -17,7 +17,7 @@ public abstract class ListenerAdapter implements Listener {
 	public void onOnlineMessage(PushMessage message) {
 
 	}
-	
+
 	@Override
 	public void onOpen() {
 

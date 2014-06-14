@@ -1,6 +1,6 @@
 package com.ks.gopush.cli;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public interface Listener {
 	void onOpen();
@@ -9,7 +9,7 @@ public interface Listener {
 
 	void onOnlineMessage(PushMessage message);
 
-	void onOfflineMessage(ArrayList<PushMessage> messages);
+	void onOfflineMessage(List<PushMessage> messages);
 
 	void onError(Throwable e, String message);
 }

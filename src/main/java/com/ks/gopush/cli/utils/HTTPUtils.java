@@ -8,26 +8,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class HttpUtils {
-
-	public static String getURL(String protocol, String host, Integer port, String path, Object... query) {
-		assert query != null && query.length % 2 == 0;
-
-		StringBuilder result = new StringBuilder();
-		result.append(protocol).append("://").append(host).append(":").append(port).append("/").append(path);
-		if (query != null) {
-			for (int i = 0; i < query.length; i += 2) {
-				if (i == 0) {
-					result.append("?");
-				} else {
-					result.append("&");
-				}
-				result.append(query[i]).append("=").append(query[i + 1]);
-			}
-		}
-
-		return result.toString();
-	}
+public class HTTPUtils {
 
 	public static String get(String url) throws IOException {
 		assert url != null && url.trim().length() != 0;
