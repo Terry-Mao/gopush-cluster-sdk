@@ -67,10 +67,6 @@ public class GoPushCliTest {
 		}
 		Assert.assertTrue("获取节点失败", cli.isGetNode());
 		Assert.assertTrue("握手失败", cli.isHandshake());
-		try {
-			TimeUnit.SECONDS.sleep(2000000);
-		} catch (InterruptedException e) {
-		}
 		cli.destory();
 	}
 

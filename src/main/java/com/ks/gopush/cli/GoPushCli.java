@@ -43,7 +43,6 @@ public class GoPushCli {
 	 *            true: 同步订阅，会阻塞在start函数。 false: 异步订阅，订阅成功后会返回。
 	 */
 	public void start(boolean isSync, long mid, long pmid) {
-		Node node = null;
 		try {
 			this.node = interfaces.getNode(key, Proto.TCP);
 			this.node.refreshMid(mid);
@@ -180,7 +179,7 @@ public class GoPushCli {
 	}
 
 	public boolean isGetNode() {
-		return isGetNode;
+		return node != null;
 	}
 
 	public boolean isHandshake() {
@@ -192,7 +191,6 @@ public class GoPushCli {
 		public void run() {
 			while (!Thread.currentThread().isInterrupted()) {
 				// 发送心跳
-				// System.out.println("heartBeat run!");
 				send("h");
 				try {
 					TimeUnit.SECONDS.sleep(heartbeat);
@@ -216,7 +214,6 @@ public class GoPushCli {
 
 	private Thread heartbeatTask;
 
-	private boolean isGetNode = false;
 	private boolean isHandshake = false;
 	private boolean isDesotry = false;
 
