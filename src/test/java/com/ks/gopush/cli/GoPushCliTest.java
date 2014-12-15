@@ -10,7 +10,7 @@ import org.junit.Test;
 public class GoPushCliTest {
 	@Before
 	public void init() {
-		local.set(new GoPushCli("114.112.93.13", 80, "Terry-Mao", 30, new Listener() {
+		local.set(new GoPushCli("127.0.0.1", 80, "Terry-Mao", 30, new Listener() {
 			@Override
 			public void onOpen() {
 				System.err.println("dang dang dang dang~");
