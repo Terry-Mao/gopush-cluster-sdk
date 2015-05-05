@@ -86,10 +86,11 @@ public class GoPushCli {
 
 	private void init() throws Exception {
 		try {
-			this.socket = new Socket(node.getHost(), node.getPort());
+			this.socket = new Socket();
 			this.socket.setKeepAlive(true);
 			// 两倍超时时间
 			this.socket.setSoTimeout((heartbeat + 15) * 1000);
+			this.socket.connect(new InetSocketAddress(node.getHost(), node.getPort()))
 			this.reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
 			this.writer = new PrintWriter(new OutputStreamWriter(this.socket.getOutputStream()));
 			// 发送请求协议头
