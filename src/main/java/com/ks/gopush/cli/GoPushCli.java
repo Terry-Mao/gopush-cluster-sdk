@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 
@@ -90,7 +91,7 @@ public class GoPushCli {
 			this.socket.setKeepAlive(true);
 			// 两倍超时时间
 			this.socket.setSoTimeout((heartbeat + 15) * 1000);
-			this.socket.connect(new InetSocketAddress(node.getHost(), node.getPort()))
+			this.socket.connect(new InetSocketAddress(node.getHost(), node.getPort()));
 			this.reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
 			this.writer = new PrintWriter(new OutputStreamWriter(this.socket.getOutputStream()));
 			// 发送请求协议头
